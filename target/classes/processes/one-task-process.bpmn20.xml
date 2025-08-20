@@ -10,9 +10,20 @@
     <process id="oneTaskProcess" name="One Task Process" isExecutable="true">
         <startEvent id="startEvent"/>
         <sequenceFlow sourceRef="startEvent" targetRef="theTask"/>
-        <userTask id="theTask" name="My Task" flowable:assignee="demoUser"/>
-        <sequenceFlow sourceRef="theTask" targetRef="endEvent"/>
-        <endEvent id="endEvent"/>
+
+        <userTask id="theTask" name="My Task" flowable:assignee="${assignee}"/>
+        <sequenceFlow sourceRef="theTask" targetRef="decision"/>
+
+        <exclusiveGateway id="decision"/>
+        <sequenceFlow sourceRef="decision" targetRef="approvedEnd">
+            <conditionExpression xsi:type="tFormalExpression">${approved}</conditionExpression>
+        </sequenceFlow>
+        <sequenceFlow sourceRef="decision" targetRef="rejectedEnd">
+            <conditionExpression xsi:type="tFormalExpression">${!approved}</conditionExpression>
+        </sequenceFlow>
+
+        <endEvent id="approvedEnd" name="Approved"/>
+        <endEvent id="rejectedEnd" name="Rejected"/>
     </process>
 
 </definitions>
