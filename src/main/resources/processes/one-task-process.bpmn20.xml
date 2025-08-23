@@ -7,23 +7,45 @@
              expressionLanguage="http://www.w3.org/1999/XPath"
              targetNamespace="http://www.flowable.org/processdef">
 
-    <process id="oneTaskProcess" name="One Task Process" isExecutable="true">
-        <startEvent id="startEvent"/>
-        <sequenceFlow sourceRef="startEvent" targetRef="theTask"/>
+    <process id="simpleLeaveProcess" name="Simple Leave Process" isExecutable="true">
+        <!-- Start Event -->
+        <startEvent id="startEvent" name="Start Leave Request"/>
+        <sequenceFlow sourceRef="startEvent" targetRef="managerReview"/>
 
-        <userTask id="theTask" name="My Task" flowable:assignee="${assignee}"/>
-        <sequenceFlow sourceRef="theTask" targetRef="decision"/>
+        <!-- Manager Review Task - Hardcoded to manager -->
+        <userTask id="managerReview" name="Manager Review" flowable:assignee="manager">
+            <documentation>Manager reviews and approves/rejects leave request</documentation>
+        </userTask>
+        <sequenceFlow sourceRef="managerReview" targetRef="decision"/>
 
-        <exclusiveGateway id="decision"/>
-        <sequenceFlow sourceRef="decision" targetRef="approvedEnd">
-            <conditionExpression xsi:type="tFormalExpression">${approved}</conditionExpression>
+        <!-- Decision Gateway -->
+        <exclusiveGateway id="decision" name="Approval Decision"/>
+        
+        <!-- Approved Path -->
+        <sequenceFlow sourceRef="decision" targetRef="notifyApproval" name="Approved">
+            <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
         </sequenceFlow>
-        <sequenceFlow sourceRef="decision" targetRef="rejectedEnd">
-            <conditionExpression xsi:type="tFormalExpression">${!approved}</conditionExpression>
+        
+        <!-- Rejected Path -->
+        <sequenceFlow sourceRef="decision" targetRef="notifyRejection" name="Rejected">
+            <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
         </sequenceFlow>
 
-        <endEvent id="approvedEnd" name="Approved"/>
-        <endEvent id="rejectedEnd" name="Rejected"/>
+        <!-- Notify Approval Task - Hardcoded to user1 -->
+        <userTask id="notifyApproval" name="Process Approved Leave" flowable:assignee="${requester}">
+            <documentation>Notify employee that leave is approved</documentation>
+        </userTask>
+        <sequenceFlow sourceRef="notifyApproval" targetRef="approvedEnd"/>
+
+        <!-- Notify Rejection Task - Hardcoded to user1 -->
+        <userTask id="notifyRejection" name="Process Rejected Leave" flowable:assignee="${requester}">
+            <documentation>Notify employee that leave is rejected</documentation>
+        </userTask>
+        <sequenceFlow sourceRef="notifyRejection" targetRef="rejectedEnd"/>
+
+        <!-- End Events -->
+        <endEvent id="approvedEnd" name="Leave Approved"/>
+        <endEvent id="rejectedEnd" name="Leave Rejected"/>
     </process>
 
 </definitions>
