@@ -357,27 +357,35 @@ public class ProcessController {
                         taskInfo.put("variables", variableMap);
                         
                         // Add process status for better context
-//                        HistoricProcessInstance process = historyService
-//                                .createHistoricProcessInstanceQuery()
-//                                .processInstanceId(task.getProcessInstanceId())
-//                                .singleResult();
-//
-//                        if (process != null) {
-//                            taskInfo.put("processDefinitionName", process.getProcessDefinitionName());
-//                            taskInfo.put("processStartTime", process.getStartTime());
-//                            taskInfo.put("processEndTime", process.getEndTime());
-//                            taskInfo.put("processFinished", process.getEndTime() != null);
-//
-//                            // For Submit Leave Request tasks, add additional context
-//                            if ("Submit Leave Request".equals(task.getName())) {
-//                                taskInfo.put("isSubmitTask", true);
-//                                taskInfo.put("action", "submitted"); // User submitted a leave request
-//                            } else if ("Manager Review".equals(task.getName())) {
-//                                taskInfo.put("isReviewTask", true);
-//                                taskInfo.put("action", variableMap.get("approved") != null ?
-//                                    (Boolean.TRUE.equals(variableMap.get("approved")) ? "approved" : "rejected") : "reviewed");
-//                            }
-//                        }
+                        HistoricProcessInstance process = historyService
+                                .createHistoricProcessInstanceQuery()
+                                .processInstanceId(task.getProcessInstanceId())
+                                .singleResult();
+
+                        if (process != null) {
+                            taskInfo.put("processDefinitionName", process.getProcessDefinitionName());
+                            taskInfo.put("processStartTime", process.getStartTime());
+                            taskInfo.put("processEndTime", process.getEndTime());
+                            taskInfo.put("processFinished", process.getEndTime() != null);
+
+                            // For Submit Leave Request tasks, add additional context
+                            if ("Submit Leave Request".equals(task.getName())) {
+                                taskInfo.put("isSubmitTask", true);
+                                taskInfo.put("action", "submitted"); // User submitted a leave request
+                                
+                                // Add process final status if process is finished
+                                if (process.getEndTime() != null) {
+                                    Boolean approved = (Boolean) variableMap.get("approved");
+                                    if (approved != null) {
+                                        taskInfo.put("finalResult", approved ? "approved" : "rejected");
+                                    }
+                                }
+                            } else if ("Manager Review".equals(task.getName())) {
+                                taskInfo.put("isReviewTask", true);
+                                taskInfo.put("action", variableMap.get("approved") != null ? 
+                                    (Boolean.TRUE.equals(variableMap.get("approved")) ? "approved" : "rejected") : "reviewed");
+                            }
+                        }
                         
                         return taskInfo;
                     })
