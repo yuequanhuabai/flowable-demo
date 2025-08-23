@@ -70,9 +70,12 @@ public class AuthController {
         return ResponseEntity.ok(response);
     }
 
-    @GetMapping("/me")
+    @GetMapping("/current-user")
     public ResponseEntity<Map<String, Object>> getCurrentUser(HttpSession session) {
         String username = (String) session.getAttribute("username");
+        
+        System.out.println("Getting current user - Session ID: " + (session != null ? session.getId() : "null"));
+        System.out.println("Username in session: " + username);
         
         if (username != null) {
             Map<String, Object> response = new HashMap<>();

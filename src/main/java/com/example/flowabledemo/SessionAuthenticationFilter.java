@@ -25,7 +25,7 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
         
         // Skip filter for login and user endpoints
         String path = request.getRequestURI();
-        if (path.equals("/api/login") || path.equals("/api/users")) {
+        if (path.equals("/api/login") || path.equals("/api/users") || path.equals("/api/current-user")) {
             filterChain.doFilter(request, response);
             return;
         }

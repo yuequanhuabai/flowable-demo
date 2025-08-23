@@ -55,9 +55,32 @@ public class ProcessController {
             
             System.out.println("Process started with ID: " + processInstance.getId());
             
-            // Check if tasks were created
-            List<Task> allTasks = taskService.createTaskQuery().list();
-            System.out.println("Total tasks in system: " + allTasks.size());
+            // Find the "Submit Leave Request" task that was just created for the current user
+            List<Task> submitTasks = taskService.createTaskQuery()
+                    .processInstanceId(processInstance.getId())
+                    .taskAssignee(loggedInUser)
+                    .taskName("Submit Leave Request")
+                    .list();
+            
+            if (submitTasks.size() > 0) {
+                Task submitTask = submitTasks.get(0);
+                System.out.println("Found submit task: " + submitTask.getId() + " for user: " + loggedInUser);
+                
+                // Complete the submit task immediately with the provided leave request data
+                Map<String, Object> taskVariables = new HashMap<>();
+                taskVariables.putAll(leaveRequest); // Include all form data as task variables
+                
+                taskService.complete(submitTask.getId(), taskVariables);
+                System.out.println("Completed submit task: " + submitTask.getId());
+            } else {
+                System.out.println("No submit task found for user: " + loggedInUser);
+            }
+            
+            // Check if tasks were created after completing submit task
+            List<Task> allTasks = taskService.createTaskQuery()
+                    .processInstanceId(processInstance.getId())
+                    .list();
+            System.out.println("Tasks after completing submit task: " + allTasks.size());
             for (Task task : allTasks) {
                 System.out.println("Task: " + task.getId() + " - " + task.getName() + " - Assignee: " + task.getAssignee());
             }
@@ -216,6 +239,8 @@ public class ProcessController {
         try {
             String loggedInUser = principal.getName();
             
+            System.out.println("Getting running processes for user: " + loggedInUser);
+            
             // Get running process instances where user is involved
             List<HistoricProcessInstance> runningProcesses = historyService
                     .createHistoricProcessInstanceQuery()
@@ -232,6 +257,12 @@ public class ProcessController {
                         processInfo.put("processDefinitionName", process.getProcessDefinitionName());
                         processInfo.put("startTime", process.getStartTime());
                         
+                        // Check if user has pending tasks for this process
+                        List<Task> userTasks = taskService.createTaskQuery()
+                                .processInstanceId(process.getId())
+                                .taskAssignee(loggedInUser)
+                                .list();
+                        
                         // Get current variables
                         List<HistoricVariableInstance> variables = historyService
                                 .createHistoricVariableInstanceQuery()
@@ -245,18 +276,225 @@ public class ProcessController {
                                 ));
                         processInfo.put("variables", variableMap);
                         
+                        // Add status information
+                        if (userTasks.size() > 0) {
+                            processInfo.put("status", "Pending Action");
+                            processInfo.put("currentTask", userTasks.get(0).getName());
+                        } else {
+                            processInfo.put("status", "Waiting Others");
+                            
+                            // Find who is currently handling the process
+                            List<Task> allTasks = taskService.createTaskQuery()
+                                    .processInstanceId(process.getId())
+                                    .list();
+                            
+                            if (allTasks.size() > 0) {
+                                processInfo.put("currentTask", allTasks.get(0).getName());
+                                processInfo.put("currentAssignee", allTasks.get(0).getAssignee());
+                            }
+                        }
+                        
+                        System.out.println("Process " + process.getId() + " status: " + processInfo.get("status"));
+                        
                         return processInfo;
                     })
                     .collect(Collectors.toList());
             
             return ResponseEntity.ok(processList);
         } catch (Exception e) {
+            System.out.println("Error getting running processes: " + e.getMessage());
             return ResponseEntity.badRequest().body(Collections.emptyList());
         }
     }
 
-//    @GetMapping("/me")
-//    public ResponseEntity<UserDetails> getUserInfo(@AuthenticationPrincipal UserDetails userDetails) {
-//        return ResponseEntity.ok(userDetails);
-//    }
+    @GetMapping("/completed-tasks")
+    public ResponseEntity<List<Map<String, Object>>> getCompletedTasks(Principal principal) {
+        try {
+            String loggedInUser = principal.getName();
+            
+            System.out.println("Getting completed tasks for user: " + loggedInUser);
+            
+            // Get completed tasks for the logged-in user from history
+            List<org.flowable.task.api.history.HistoricTaskInstance> completedTasks = historyService
+                    .createHistoricTaskInstanceQuery()
+                    .taskAssignee(loggedInUser)
+                    .finished()
+                    .orderByHistoricTaskInstanceEndTime()
+                    .desc()
+                    .list();
+            
+            System.out.println("Completed tasks for " + loggedInUser + ": " + completedTasks.size());
+            
+            // Debug: Show all completed tasks
+//            for (org.flowable.task.api.history.HistoricTaskInstance task : completedTasks) {
+//                System.out.println("Completed task: " + task.getId() + " - " + task.getName() +
+//                                 " - Assignee: " + task.getAssignee() +
+//                                 " - End Time: " + task.getEndTime());
+//            }
+            
+            List<Map<String, Object>> taskList = completedTasks.stream()
+                    .map(task -> {
+                        Map<String, Object> taskInfo = new HashMap<>();
+                        taskInfo.put("id", task.getId());
+                        taskInfo.put("name", task.getName());
+                        taskInfo.put("description", task.getDescription());
+                        taskInfo.put("startTime", task.getStartTime());
+                        taskInfo.put("endTime", task.getEndTime());
+                        taskInfo.put("duration", task.getDurationInMillis());
+                        taskInfo.put("processInstanceId", task.getProcessInstanceId());
+                        
+                        // Get process variables
+                        List<HistoricVariableInstance> variables = historyService
+                                .createHistoricVariableInstanceQuery()
+                                .processInstanceId(task.getProcessInstanceId())
+                                .list();
+                        
+                        Map<String, Object> variableMap = variables.stream()
+                                .collect(Collectors.toMap(
+                                    HistoricVariableInstance::getVariableName,
+                                    HistoricVariableInstance::getValue
+                                ));
+                        taskInfo.put("variables", variableMap);
+                        
+                        // Add process status for better context
+//                        HistoricProcessInstance process = historyService
+//                                .createHistoricProcessInstanceQuery()
+//                                .processInstanceId(task.getProcessInstanceId())
+//                                .singleResult();
+//
+//                        if (process != null) {
+//                            taskInfo.put("processDefinitionName", process.getProcessDefinitionName());
+//                            taskInfo.put("processStartTime", process.getStartTime());
+//                            taskInfo.put("processEndTime", process.getEndTime());
+//                            taskInfo.put("processFinished", process.getEndTime() != null);
+//
+//                            // For Submit Leave Request tasks, add additional context
+//                            if ("Submit Leave Request".equals(task.getName())) {
+//                                taskInfo.put("isSubmitTask", true);
+//                                taskInfo.put("action", "submitted"); // User submitted a leave request
+//                            } else if ("Manager Review".equals(task.getName())) {
+//                                taskInfo.put("isReviewTask", true);
+//                                taskInfo.put("action", variableMap.get("approved") != null ?
+//                                    (Boolean.TRUE.equals(variableMap.get("approved")) ? "approved" : "rejected") : "reviewed");
+//                            }
+//                        }
+                        
+                        return taskInfo;
+                    })
+                    .collect(Collectors.toList());
+            
+            return ResponseEntity.ok(taskList);
+        } catch (Exception e) {
+            System.out.println("Error getting completed tasks: " + e.getMessage());
+            return ResponseEntity.badRequest().body(Collections.emptyList());
+        }
+    }
+
+    @GetMapping("/process-progress/{processInstanceId}")
+    public ResponseEntity<Map<String, Object>> getProcessProgress(
+            @PathVariable String processInstanceId,
+            Principal principal) {
+        try {
+            String loggedInUser = principal.getName();
+            
+            System.out.println("Getting process progress for: " + processInstanceId + " by user: " + loggedInUser);
+            
+            // Check if user is involved in this process
+            HistoricProcessInstance process = historyService
+                    .createHistoricProcessInstanceQuery()
+                    .processInstanceId(processInstanceId)
+                    .involvedUser(loggedInUser)
+                    .singleResult();
+            
+            if (process == null) {
+                return ResponseEntity.status(403).build(); // User not involved in this process
+            }
+            
+            Map<String, Object> progressInfo = new HashMap<>();
+            progressInfo.put("processInstanceId", processInstanceId);
+            progressInfo.put("processDefinitionName", process.getProcessDefinitionName());
+            progressInfo.put("startTime", process.getStartTime());
+            progressInfo.put("endTime", process.getEndTime());
+            progressInfo.put("isFinished", process.getEndTime() != null);
+            
+            // Get all tasks in this process (completed and active)
+            List<org.flowable.task.api.history.HistoricTaskInstance> allTasks = historyService
+                    .createHistoricTaskInstanceQuery()
+                    .processInstanceId(processInstanceId)
+                    .orderByHistoricTaskInstanceStartTime()
+                    .asc()
+                    .list();
+            
+            // Get current active tasks
+            List<Task> activeTasks = taskService.createTaskQuery()
+                    .processInstanceId(processInstanceId)
+                    .list();
+            
+            List<Map<String, Object>> taskProgress = new ArrayList<>();
+            
+            // Add completed tasks
+            for (org.flowable.task.api.history.HistoricTaskInstance task : allTasks) {
+                if (task.getEndTime() != null) { // Completed task
+                    Map<String, Object> taskInfo = new HashMap<>();
+                    taskInfo.put("id", task.getId());
+                    taskInfo.put("name", task.getName());
+                    taskInfo.put("assignee", task.getAssignee());
+                    taskInfo.put("startTime", task.getStartTime());
+                    taskInfo.put("endTime", task.getEndTime());
+                    taskInfo.put("duration", task.getDurationInMillis());
+                    taskInfo.put("status", "completed");
+                    taskProgress.add(taskInfo);
+                }
+            }
+            
+            // Add active tasks
+            for (Task task : activeTasks) {
+                Map<String, Object> taskInfo = new HashMap<>();
+                taskInfo.put("id", task.getId());
+                taskInfo.put("name", task.getName());
+                taskInfo.put("assignee", task.getAssignee());
+                taskInfo.put("startTime", task.getCreateTime());
+                taskInfo.put("endTime", null);
+                taskInfo.put("duration", null);
+                taskInfo.put("status", "active");
+                taskProgress.add(taskInfo);
+            }
+            
+            progressInfo.put("tasks", taskProgress);
+            
+            // Get process variables
+            List<HistoricVariableInstance> variables = historyService
+                    .createHistoricVariableInstanceQuery()
+                    .processInstanceId(processInstanceId)
+                    .list();
+            
+            Map<String, Object> variableMap = variables.stream()
+                    .collect(Collectors.toMap(
+                        HistoricVariableInstance::getVariableName,
+                        HistoricVariableInstance::getValue
+                    ));
+            progressInfo.put("variables", variableMap);
+            
+            // Calculate progress percentage
+            int totalTasks = taskProgress.size();
+            long completedTasks = taskProgress.stream()
+                    .mapToInt(task -> "completed".equals(task.get("status")) ? 1 : 0)
+                    .sum();
+            
+            if (totalTasks > 0) {
+                double progressPercentage = (double) completedTasks / totalTasks * 100;
+                progressInfo.put("progressPercentage", Math.round(progressPercentage));
+            } else {
+                progressInfo.put("progressPercentage", 0);
+            }
+            
+            return ResponseEntity.ok(progressInfo);
+        } catch (Exception e) {
+            System.out.println("Error getting process progress: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("error", "Failed to get process progress: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
 }
