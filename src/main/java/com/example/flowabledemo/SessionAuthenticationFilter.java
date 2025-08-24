@@ -32,11 +32,25 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
 
         HttpSession session = request.getSession(false);
         
+        // 如果session为null，但有sessionId，尝试重新获取或创建
+        if (session == null && request.getRequestedSessionId() != null) {
+            System.out.println("SessionAuthenticationFilter - Session is null but sessionId exists, trying to get session...");
+            session = request.getSession(false);  // 再次尝试
+            
+            if (session == null) {
+                System.out.println("SessionAuthenticationFilter - Session still null, sessionId may be expired or invalid");
+            }
+        }
+        
         System.out.println("SessionAuthenticationFilter - Path: " + path);
         System.out.println("SessionAuthenticationFilter - Session: " + (session != null ? session.getId() : "null"));
+        System.out.println("SessionAuthenticationFilter - Request Cookie: " + request.getHeader("Cookie"));
+        System.out.println("SessionAuthenticationFilter - User-Agent: " + request.getHeader("User-Agent"));
         
         if (session != null) {
             System.out.println("SessionAuthenticationFilter - Username in session: " + session.getAttribute("username"));
+            System.out.println("SessionAuthenticationFilter - Session max inactive interval: " + session.getMaxInactiveInterval());
+            System.out.println("SessionAuthenticationFilter - Session last accessed time: " + session.getLastAccessedTime());
         }
         
         if (session != null && session.getAttribute("username") != null) {
@@ -58,9 +72,13 @@ public class SessionAuthenticationFilter extends OncePerRequestFilter {
         } else {
             // No valid session, return 401
             System.out.println("SessionAuthenticationFilter - No valid session, returning 401");
+            System.out.println("SessionAuthenticationFilter - Available sessions: " + 
+                (request.getRequestedSessionId() != null ? request.getRequestedSessionId() : "none"));
+            
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType("application/json");
-            response.getWriter().write("{\"error\":\"Authentication required\"}");
+            response.setHeader("Access-Control-Allow-Credentials", "true");
+            response.getWriter().write("{\"error\":\"Authentication required\",\"sessionExpired\":true}");
         }
     }
 }

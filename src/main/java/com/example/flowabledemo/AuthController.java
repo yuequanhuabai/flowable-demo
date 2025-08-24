@@ -38,13 +38,22 @@ public class AuthController {
                 session.setAttribute("username", username);
                 session.setAttribute("roles", userDetails.getAuthorities());
                 
+                // 设置session超时时间为30分钟
+                session.setMaxInactiveInterval(30 * 60);
+                
                 System.out.println("Login successful for user: " + username);
+                System.out.println("Session ID after login: " + session.getId());
                 System.out.println("Session attributes set: " + session.getAttribute("username"));
+                System.out.println("Session max inactive interval: " + session.getMaxInactiveInterval());
+                
+                // 存储到session恢复映射中
+                SimpleSessionRecoveryFilter.storeUserSession(session.getId(), username);
                 
                 Map<String, Object> response = new HashMap<>();
                 response.put("username", username);
                 response.put("roles", userDetails.getAuthorities());
                 response.put("message", "Login successful");
+                response.put("sessionId", session.getId()); // 帮助调试
                 
                 return ResponseEntity.ok(response);
             } else {
@@ -63,7 +72,11 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<Map<String, Object>> logout(HttpSession session) {
-        session.invalidate();
+        if (session != null) {
+            // 清理session恢复映射
+            SimpleSessionRecoveryFilter.removeUserSession(session.getId());
+            session.invalidate();
+        }
         
         Map<String, Object> response = new HashMap<>();
         response.put("message", "Logged out successfully");
@@ -97,5 +110,25 @@ public class AuthController {
         );
         
         return ResponseEntity.ok(users);
+    }
+    
+    @GetMapping("/debug-session")
+    public ResponseEntity<Map<String, Object>> debugSession(HttpSession session, 
+                                                             jakarta.servlet.http.HttpServletRequest request) {
+        Map<String, Object> debug = new HashMap<>();
+        debug.put("sessionId", session != null ? session.getId() : "null");
+        debug.put("sessionValid", session != null && session.getAttribute("username") != null);
+        debug.put("username", session != null ? session.getAttribute("username") : "null");
+        debug.put("requestedSessionId", request.getRequestedSessionId());
+        debug.put("sessionFromCookie", request.isRequestedSessionIdFromCookie());
+        debug.put("sessionFromUrl", request.isRequestedSessionIdFromURL());
+        debug.put("sessionIdValid", request.isRequestedSessionIdValid());
+        debug.put("cookieHeader", request.getHeader("Cookie"));
+        
+        System.out.println("=== Session Debug Info ===");
+        debug.forEach((key, value) -> System.out.println(key + ": " + value));
+        System.out.println("=========================");
+        
+        return ResponseEntity.ok(debug);
     }
 }

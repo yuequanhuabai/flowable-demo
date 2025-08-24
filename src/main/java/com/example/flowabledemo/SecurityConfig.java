@@ -26,6 +26,9 @@ public class SecurityConfig {
 
     @Autowired
     private SessionAuthenticationFilter sessionAuthenticationFilter;
+    
+    @Autowired  
+    private SimpleSessionRecoveryFilter sessionRecoveryFilter;
 
     @Bean
     public PasswordEncoder passwordEncoder() {
@@ -39,10 +42,11 @@ public class SecurityConfig {
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
             .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED))
             .authorizeHttpRequests(authz -> authz
-                .requestMatchers("/api/login", "/api/users", "/api/current-user").permitAll()
+                .requestMatchers("/api/login", "/api/users", "/api/current-user", "/api/debug-session").permitAll()
                 .anyRequest().authenticated()
             )
-            .addFilterBefore(sessionAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterBefore(sessionRecoveryFilter, UsernamePasswordAuthenticationFilter.class)
+            .addFilterAfter(sessionAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
             .httpBasic(httpBasic -> httpBasic.disable())
             .formLogin(form -> form.disable());
 

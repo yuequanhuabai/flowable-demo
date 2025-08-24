@@ -152,6 +152,11 @@ public class ProcessController {
             @RequestBody Map<String, Object> taskData,
             Principal principal) {
         try {
+            System.out.println("=== 开始完成任务操作 ===");
+            System.out.println("📋 任务ID: " + taskId);
+            System.out.println("👤 操作用户: " + principal.getName());
+            System.out.println("📝 任务数据: " + taskData);
+            
             // Check if task exists and belongs to the user
             Task task = taskService.createTaskQuery()
                     .taskId(taskId)
@@ -159,21 +164,30 @@ public class ProcessController {
                     .singleResult();
             
             if (task == null) {
+                System.out.println("❌ 任务不存在或不属于当前用户");
                 Map<String, Object> errorResponse = new HashMap<>();
                 errorResponse.put("error", "Task not found or not assigned to you");
                 return ResponseEntity.badRequest().body(errorResponse);
             }
+            
+            System.out.println("✅ 找到任务: " + task.getName() + " (流程实例ID: " + task.getProcessInstanceId() + ")");
 
             // Process task data - convert string "true"/"false" to boolean for approved field
             if (taskData.containsKey("approved")) {
                 Object approvedValue = taskData.get("approved");
                 if (approvedValue instanceof String) {
                     taskData.put("approved", Boolean.parseBoolean((String) approvedValue));
+                    System.out.println("🔄 转换审批结果: " + approvedValue + " -> " + taskData.get("approved"));
                 }
             }
             
+            System.out.println("⏳ 即将调用 taskService.complete() - 这里会执行Command模式的所有操作");
+            
             // Complete the task with provided data
             taskService.complete(taskId, taskData);
+            
+            System.out.println("✅ taskService.complete() 执行完毕");
+            System.out.println("=== 任务完成操作结束 ===");
             
             Map<String, Object> response = new HashMap<>();
             response.put("message", "Task completed successfully");
@@ -182,6 +196,8 @@ public class ProcessController {
             
             return ResponseEntity.ok(response);
         } catch (Exception e) {
+            System.out.println("❌ 任务完成失败: " + e.getMessage());
+            e.printStackTrace();
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("error", "Failed to complete task: " + e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
