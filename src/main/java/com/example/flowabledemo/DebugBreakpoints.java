@@ -51,12 +51,7 @@ public class DebugBreakpoints {
     }
     
     /**
-     * 🔴 断点3: 数据库操作入队
-     * 
-     * 类：org.flowable.common.engine.impl.persistence.entity.AbstractEntityManager
-     * 方法：insert(Entity entity)
-     * 方法：update(Entity entity)  
-     * 方法：delete(Entity entity)
+     *
      * 
      * 🔍 观察变量：
      * - entity: 被操作的实体对象

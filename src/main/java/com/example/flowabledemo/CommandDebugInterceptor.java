@@ -25,10 +25,14 @@ public class CommandDebugInterceptor extends AbstractCommandInterceptor {
             System.out.println("\n🔍 ===== 开始调试Command: " + commandName + " =====");
             
             try {
+                // 执行前检查Agenda
+                analyzeAgendaBeforeExecution();
+                
                 // 执行命令并获取CommandContext
                 T result = next.execute(config, command, commandExecutor);
                 
-                // 在命令执行后，分析CommandContext中的操作
+                // 执行后检查Agenda和数据库操作
+                analyzeAgendaAfterExecution();
                 analyzeCommandContext();
                 
                 System.out.println("🔍 ===== Command调试结束: " + commandName + " =====\n");
@@ -41,6 +45,75 @@ public class CommandDebugInterceptor extends AbstractCommandInterceptor {
             }
         } else {
             return next.execute(config, command, commandExecutor);
+        }
+    }
+    
+    private void analyzeAgendaBeforeExecution() {
+        try {
+            CommandContext commandContext = org.flowable.common.engine.impl.context.Context.getCommandContext();
+            if (commandContext != null) {
+                Object agenda = getAgenda(commandContext);
+                if (agenda != null) {
+                    System.out.println("📋 执行前Agenda分析:");
+                    analyzeAgenda(agenda, "执行前");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️  分析执行前Agenda失败: " + e.getMessage());
+        }
+    }
+    
+    private void analyzeAgendaAfterExecution() {
+        try {
+            CommandContext commandContext = org.flowable.common.engine.impl.context.Context.getCommandContext();
+            if (commandContext != null) {
+                Object agenda = getAgenda(commandContext);
+                if (agenda != null) {
+                    System.out.println("📋 执行后Agenda分析:");
+                    analyzeAgenda(agenda, "执行后");
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("⚠️  分析执行后Agenda失败: " + e.getMessage());
+        }
+    }
+    
+    private Object getAgenda(CommandContext commandContext) {
+        try {
+            // 尝试通过反射获取FlowableEngineAgenda
+            Field[] fields = commandContext.getClass().getDeclaredFields();
+            for (Field field : fields) {
+                field.setAccessible(true);
+                Object value = field.get(commandContext);
+                if (value != null && value.getClass().getName().contains("Agenda")) {
+                    return value;
+                }
+            }
+        } catch (Exception e) {
+            System.out.println("获取Agenda失败: " + e.getMessage());
+        }
+        return null;
+    }
+    
+    private void analyzeAgenda(Object agenda, String phase) {
+        try {
+            // 获取待执行操作数量
+            Boolean isEmpty = getFieldValue(agenda, "isEmpty");
+            if (isEmpty != null) {
+                System.out.println("  🎯 " + phase + "Agenda是否为空: " + isEmpty);
+            }
+            
+            // 尝试获取操作队列
+            Collection<?> operations = getFieldValue(agenda, "operations");
+            if (operations != null) {
+                System.out.println("  📝 " + phase + "待执行操作数量: " + operations.size());
+                for (Object operation : operations) {
+                    System.out.println("    - " + operation.getClass().getSimpleName());
+                }
+            }
+            
+        } catch (Exception e) {
+            System.out.println("分析Agenda详情失败: " + e.getMessage());
         }
     }
     
