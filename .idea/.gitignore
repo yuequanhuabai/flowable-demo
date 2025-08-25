@@ -1,10 +1,39 @@
-# Default ignored files
-/shelf/
-/workspace.xml
-# Editor-based HTTP Client requests
-/httpRequests/
-# Environment-dependent path to Maven home directory
-/mavenHomeManager.xml
-# Datasource local storage ignored files
-/dataSources/
-/dataSources.local.xml
+### IntelliJ IDEA ###
+# 忽略整個 .idea 目錄
+.idea/
+
+# 但允許提交 .idea/.gitignore
+!.idea/.gitignore
+
+# 忽略 IDEA 生成的專案文件
+*.iml
+*.iws
+out/
+.idea_modules/
+
+### Java ###
+# 編譯輸出
+target/
+build/
+bin/
+
+# 日誌
+*.log
+
+# 依賴包
+*.jar
+*.war
+*.ear
+
+### Maven ###
+.mvn/wrapper/maven-wrapper.jar
+
+### Gradle ###
+.gradle/
+build/
+
+### OS ###
+# macOS
+.DS_Store
+# Windows
+Thumbs.db

@@ -1,1 +1,2 @@
-target/
+# Ignore IntelliJ project files
+.idea/
