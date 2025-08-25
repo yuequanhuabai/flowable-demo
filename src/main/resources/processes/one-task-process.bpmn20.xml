@@ -7,23 +7,39 @@
              expressionLanguage="http://www.w3.org/1999/XPath"
              targetNamespace="http://www.flowable.org/processdef">
 
-    <process id="oneTaskProcess" name="One Task Process" isExecutable="true">
-        <startEvent id="startEvent"/>
-        <sequenceFlow sourceRef="startEvent" targetRef="theTask"/>
+    <process id="simpleLeaveProcess" name="Simple Leave Process" isExecutable="true">
+        <!-- Start Event -->
+        <startEvent id="startEvent" name="Start Leave Request"/>
+        <sequenceFlow sourceRef="startEvent" targetRef="submitLeaveRequest"/>
 
-        <userTask id="theTask" name="My Task" flowable:assignee="${assignee}"/>
-        <sequenceFlow sourceRef="theTask" targetRef="decision"/>
+        <!-- Submit Leave Request Task -->
+        <userTask id="submitLeaveRequest" name="Submit Leave Request" flowable:assignee="${requester}">
+            <documentation>Employee submits leave request with details</documentation>
+        </userTask>
+        <sequenceFlow sourceRef="submitLeaveRequest" targetRef="managerReview"/>
 
-        <exclusiveGateway id="decision"/>
-        <sequenceFlow sourceRef="decision" targetRef="approvedEnd">
-            <conditionExpression xsi:type="tFormalExpression">${approved}</conditionExpression>
+        <!-- Manager Review Task -->
+        <userTask id="managerReview" name="Manager Review" flowable:assignee="manager">
+            <documentation>Manager reviews and approves/rejects leave request</documentation>
+        </userTask>
+        <sequenceFlow sourceRef="managerReview" targetRef="decision"/>
+
+        <!-- Decision Gateway -->
+        <exclusiveGateway id="decision" name="Approval Decision"/>
+        
+        <!-- Approved Path -->
+        <sequenceFlow sourceRef="decision" targetRef="approvedEnd" name="Approved">
+            <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
         </sequenceFlow>
-        <sequenceFlow sourceRef="decision" targetRef="rejectedEnd">
-            <conditionExpression xsi:type="tFormalExpression">${!approved}</conditionExpression>
+        
+        <!-- Rejected Path -->
+        <sequenceFlow sourceRef="decision" targetRef="rejectedEnd" name="Rejected">
+            <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
         </sequenceFlow>
 
-        <endEvent id="approvedEnd" name="Approved"/>
-        <endEvent id="rejectedEnd" name="Rejected"/>
+        <!-- End Events -->
+        <endEvent id="approvedEnd" name="Leave Approved"/>
+        <endEvent id="rejectedEnd" name="Leave Rejected"/>
     </process>
 
 </definitions>
