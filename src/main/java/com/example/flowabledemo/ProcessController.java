@@ -29,9 +29,6 @@ public class ProcessController {
     
     @Autowired
     private HistoryService historyService;
-    
-    @Autowired
-    private FlowableApiGuide flowableApiGuide;
 
     @PostMapping("/start-leave-request")
     public ResponseEntity<Map<String, Object>> startLeaveRequest(
