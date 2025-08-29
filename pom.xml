@@ -48,10 +48,69 @@
     </dependencies>
 
     <build>
+        <!--  設置構建的jar包名  -->
+        <finalName>${project.artifactId}</finalName>
+
         <plugins>
+            <!-- 复制依赖到指定目录 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>copy-dependencies</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>copy-dependencies</goal>
+                        </goals>
+                        <configuration>
+                            <outputDirectory>${project.build.directory}/lib</outputDirectory>
+                            <overWriteReleases>false</overWriteReleases>
+                            <overWriteSnapshots>false</overWriteSnapshots>
+                            <overWriteIfNewer>true</overWriteIfNewer>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+
+                <configuration>
+                    <layout>ZIP</layout>
+                </configuration>
+                <executions>
+
+                    <!-- 创建包含所有依赖的fat jar -->
+                    <execution>
+                        <id>repackage-fat</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>fat</classifier>  <!-- 生成 xxx-fat.jar -->
+                        </configuration>
+                    </execution>
+                    <!-- 创建只包含应用代码的thin jar -->
+                    <execution>
+                        <id>repackage-thin</id>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                        <configuration>
+                            <classifier>thin</classifier>
+                            <layout>ZIP</layout>
+                            <includes>
+                                <include>
+                                    <groupId>nothing</groupId>
+                                    <artifactId>nothing</artifactId>
+                                </include>
+                            </includes>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             
         </plugins>

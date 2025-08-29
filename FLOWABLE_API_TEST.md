@@ -2,7 +2,7 @@
 
 > **专注实际使用，掌握核心功能**
 
-## 📋 API 端点总览
+## 📋 API 端点总览[OAuth2_Principles_and_Implementation.md](../oauth2-docs/OAuth2_Principles_and_Implementation.md)
 
 ### 🚀 流程管理
 ```http
