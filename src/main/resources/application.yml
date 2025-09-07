@@ -1,5 +1,5 @@
 server:
-  port: 8085
+  port: 8080
 
 spring:
   application:
@@ -10,10 +10,6 @@ spring:
     username: root
     password: Aa+123456
     driver-class-name: com.mysql.cj.jdbc.Driver
-
-  autoconfigure:
-    exclude: 
-      - org.springframework.boot.autoconfigure.orm.jpa.HibernateJpaAutoConfiguration
 
 # MyBatis Plus 配置
 mybatis-plus:
