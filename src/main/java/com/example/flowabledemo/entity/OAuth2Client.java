@@ -1,115 +1,149 @@
 package com.example.flowabledemo.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 import java.time.LocalDateTime;
-import java.util.List;
 import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
 
 /**
- * OAuth2客戶端實體類
- * 簡化版實現，包含核心字段
+ * OAuth2客户端实体类
+ * 基于四个核心安全机制设计：身份标识、身份验证、权限控制、可撤销机制
  */
 @Data
-@EqualsAndHashCode(callSuper = false)
-@TableName("oauth2_client")
 public class OAuth2Client {
 
-    /**
-     * 主鍵ID
-     */
-    @TableId(value = "id", type = IdType.AUTO)
+    // 🏷️ 身份标识机制
     private Long id;
-
-    /**
-     * 客戶端ID (唯一標識)
-     */
-    @TableField("client_id")
     private String clientId;
 
-    /**
-     * 客戶端密鑰
-     */
-    @TableField("client_secret")
+    // 🔐 身份验证机制
     private String clientSecret;
 
-    /**
-     * 客戶端名稱
-     */
-    @TableField("client_name")
+    // 📝 基本信息
     private String clientName;
 
-    /**
-     * 重定向URI
-     */
-    @TableField("redirect_uri")
+    // 🎯 权限控制机制
     private String redirectUri;
-
-    /**
-     * 權限範圍 (逗號分隔)
-     */
-    @TableField("scopes")
     private String scopes;
 
-    /**
-     * 授權類型 (逗號分隔)
-     */
-    @TableField("grant_types")
-    private String grantTypes;
-
-    /**
-     * 客戶端描述
-     */
-    @TableField("client_description")
-    private String clientDescription;
-
-    /**
-     * 是否激活
-     */
-    @TableField("is_active")
+    // ⏰ 可撤销机制
     private Boolean isActive;
 
-    /**
-     * 創建時間
-     */
-    @TableField(value = "created_at", fill = FieldFill.INSERT)
+    // 📅 审计信息
     private LocalDateTime createdAt;
-
-    /**
-     * 更新時間
-     */
-    @TableField(value = "updated_at", fill = FieldFill.INSERT_UPDATE)
     private LocalDateTime updatedAt;
 
-    // 便捷方法：將scopes字符串轉換為List
-    public List<String> getScopesList() {
-        if (scopes == null || scopes.trim().isEmpty()) {
-            return List.of();
-        }
-        return Arrays.asList(scopes.split(","));
+    // ================================
+    // 基础方法：getter/setter (框架需要)
+    // ================================
+
+//    public Long getId() {
+//        return id;
+//    }
+//
+//    public void setId(Long id) {
+//        this.id = id;
+//    }
+//
+//    public String getClientId() {
+//        return clientId;
+//    }
+//
+//    public void setClientId(String clientId) {
+//        this.clientId = clientId;
+//    }
+//
+//    public String getClientSecret() {
+//        return clientSecret;
+//    }
+//
+//    public void setClientSecret(String clientSecret) {
+//        this.clientSecret = clientSecret;
+//    }
+//
+//    public String getClientName() {
+//        return clientName;
+//    }
+//
+//    public void setClientName(String clientName) {
+//        this.clientName = clientName;
+//    }
+//
+//    public String getRedirectUri() {
+//        return redirectUri;
+//    }
+//
+//    public void setRedirectUri(String redirectUri) {
+//        this.redirectUri = redirectUri;
+//    }
+//
+//    public String getScopes() {
+//        return scopes;
+//    }
+//
+//    public void setScopes(String scopes) {
+//        this.scopes = scopes;
+//    }
+//
+//    public Boolean getIsActive() {
+//        return isActive;
+//    }
+//
+//    public void setIsActive(Boolean isActive) {
+//        this.isActive = isActive;
+//    }
+//
+//    public LocalDateTime getCreatedAt() {
+//        return createdAt;
+//    }
+//
+//    public void setCreatedAt(LocalDateTime createdAt) {
+//        this.createdAt = createdAt;
+//    }
+//
+//    public LocalDateTime getUpdatedAt() {
+//        return updatedAt;
+//    }
+//
+//    public void setUpdatedAt(LocalDateTime updatedAt) {
+//        this.updatedAt = updatedAt;
+//    }
+
+    // ================================
+    // 基础方法：equals/hashCode (集合操作需要)
+    // ================================
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) return true;
+        if (obj == null || getClass() != obj.getClass()) return false;
+        OAuth2Client that = (OAuth2Client) obj;
+        return Objects.equals(clientId, that.clientId);
     }
 
-    // 便捷方法：將grantTypes字符串轉換為List
-    public List<String> getGrantTypesList() {
-        if (grantTypes == null || grantTypes.trim().isEmpty()) {
-            return List.of("authorization_code");
-        }
-        return Arrays.asList(grantTypes.split(","));
+    @Override
+    public int hashCode() {
+        return Objects.hash(clientId);
     }
 
-    // 便捷方法：設置scopes
-    public void setScopesList(List<String> scopesList) {
-        if (scopesList != null && !scopesList.isEmpty()) {
-            this.scopes = String.join(",", scopesList);
-        }
-    }
+    // ================================
+    // 基础方法：toString (调试和日志需要)
+    // ================================
 
-    // 便捷方法：設置grantTypes
-    public void setGrantTypesList(List<String> grantTypesList) {
-        if (grantTypesList != null && !grantTypesList.isEmpty()) {
-            this.grantTypes = String.join(",", grantTypesList);
-        }
+    @Override
+    public String toString() {
+        return "OAuth2Client{" +
+                "id=" + id +
+                ", clientId='" + clientId + '\'' +
+                ", clientName='" + clientName + '\'' +
+                ", redirectUri='" + redirectUri + '\'' +
+                ", scopes='" + scopes + '\'' +
+                ", isActive=" + isActive +
+                ", createdAt=" + createdAt +
+                ", updatedAt=" + updatedAt +
+                ", clientSecret='[PROTECTED]'" +  // 🔒 不在日志中暴露密钥
+                '}';
     }
 }
