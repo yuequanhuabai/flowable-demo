@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.example.flowabledemo.mapper.OAuth2ClientMapper">
+
+    <!-- 結果映射 -->
+    <resultMap id="OAuth2ClientResultMap" type="com.example.flowabledemo.entity.OAuth2Client">
+        <id property="id" column="id"/>
+        <result property="clientId" column="client_id"/>
+        <result property="clientSecret" column="client_secret"/>
+        <result property="clientName" column="client_name"/>
+        <result property="redirectUri" column="redirect_uri"/>
+        <result property="scopes" column="scopes"/>
+        <result property="grantTypes" column="grant_types"/>
+        <result property="clientDescription" column="client_description"/>
+        <result property="isActive" column="is_active"/>
+        <result property="createdAt" column="created_at"/>
+        <result property="updatedAt" column="updated_at"/>
+    </resultMap>
+
+    <!-- 基本查詢字段 -->
+    <sql id="Base_Column_List">
+        id, client_id, client_secret, client_name, redirect_uri, 
+        scopes, grant_types, client_description, is_active, 
+        created_at, updated_at
+    </sql>
+
+    <!-- 複雜查詢：根據多個條件查詢客戶端 -->
+    <select id="findByConditions" resultMap="OAuth2ClientResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM oauth2_client
+        <where>
+            is_active = 1
+            <if test="clientId != null and clientId != ''">
+                AND client_id = #{clientId}
+            </if>
+            <if test="clientName != null and clientName != ''">
+                AND client_name LIKE CONCAT('%', #{clientName}, '%')
+            </if>
+            <if test="scopes != null and scopes != ''">
+                AND scopes LIKE CONCAT('%', #{scopes}, '%')
+            </if>
+        </where>
+        ORDER BY created_at DESC
+    </select>
+
+    <!-- 分頁查詢客戶端 -->
+    <select id="findClientsWithPagination" resultMap="OAuth2ClientResultMap">
+        SELECT 
+        <include refid="Base_Column_List"/>
+        FROM oauth2_client
+        WHERE is_active = 1
+        ORDER BY created_at DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <!-- 統計總數 -->
+    <select id="countActiveClients" resultType="java.lang.Integer">
+        SELECT COUNT(1) FROM oauth2_client WHERE is_active = 1
+    </select>
+
+    <!-- 軟刪除客戶端 -->
+    <update id="softDeleteByClientId">
+        UPDATE oauth2_client 
+        SET is_active = 0, updated_at = CURRENT_TIMESTAMP
+        WHERE client_id = #{clientId}
+    </update>
+
+    <!-- 批量插入客戶端 -->
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO oauth2_client (
+            client_id, client_secret, client_name, redirect_uri,
+            scopes, grant_types, client_description, is_active
+        ) VALUES
+        <foreach collection="list" item="client" separator=",">
+            (
+                #{client.clientId},
+                #{client.clientSecret},
+                #{client.clientName},
+                #{client.redirectUri},
+                #{client.scopes},
+                #{client.grantTypes},
+                #{client.clientDescription},
+                #{client.isActive}
+            )
+        </foreach>
+    </insert>
+
+</mapper>
