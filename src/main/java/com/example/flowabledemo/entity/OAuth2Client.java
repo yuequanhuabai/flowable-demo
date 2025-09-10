@@ -146,4 +146,67 @@ public class OAuth2Client {
                 ", clientSecret='[PROTECTED]'" +  // 🔒 不在日志中暴露密钥
                 '}';
     }
+
+    // ================================
+    // 业务方法：基于三个核心行为需求
+    // ================================
+
+    // 🔐 行为1：证明身份 (验证客户端凭据)
+    public boolean verifyCredentials(String providedSecret) {
+        if (providedSecret == null || this.clientSecret == null) {
+            return false;
+        }
+        // TODO: 实际使用时需要用BCrypt比较加密密钥
+        // return BCrypt.checkpw(providedSecret, this.clientSecret);
+        return this.clientSecret.equals(providedSecret); // 临时简化版
+    }
+
+    // 🎯 行为2：明确权限 (检查权限范围)
+    public boolean hasScope(String requestedScope) {
+        if (requestedScope == null || this.scopes == null) {
+            return false;
+        }
+        List<String> availableScopes = Arrays.asList(this.scopes.split(","));
+        return availableScopes.contains(requestedScope.trim());
+    }
+
+    // 📋 行为2扩展：获取所有可用权限
+    public List<String> getAvailableScopes() {
+        if (this.scopes == null || this.scopes.trim().isEmpty()) {
+            return Arrays.asList("read"); // 默认只读权限
+        }
+        return Arrays.asList(this.scopes.split(","))
+                .stream()
+                .map(String::trim)
+                .toList();
+    }
+
+    // ⚡ 行为3：表明状态 (检查客户端可用性)
+    public boolean isAvailable() {
+        return this.isActive != null && this.isActive;
+    }
+
+    // 🛡️ 行为3扩展：获取状态描述
+    public String getStatusDescription() {
+        if (!isAvailable()) {
+            return "DISABLED - Client has been deactivated";
+        }
+        return "ACTIVE - Client is operational";
+    }
+
+    // 🔍 行为整合：完整验证 (综合三个行为)
+    public boolean isValidForRequest(String providedSecret, String requestedScope) {
+        // 1. 首先检查状态
+        if (!isAvailable()) {
+            return false;
+        }
+        
+        // 2. 验证身份凭据
+        if (!verifyCredentials(providedSecret)) {
+            return false;
+        }
+        
+        // 3. 检查权限范围
+        return hasScope(requestedScope);
+    }
 }
