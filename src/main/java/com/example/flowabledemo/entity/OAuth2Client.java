@@ -148,65 +148,65 @@ public class OAuth2Client {
     }
 
     // ================================
-    // 业务方法：基于三个核心行为需求
+    // 业务方法：客户端数据自身的行为
     // ================================
 
-    // 🔐 行为1：证明身份 (验证客户端凭据)
-    public boolean verifyCredentials(String providedSecret) {
-        if (providedSecret == null || this.clientSecret == null) {
-            return false;
-        }
-        // TODO: 实际使用时需要用BCrypt比较加密密钥
-        // return BCrypt.checkpw(providedSecret, this.clientSecret);
-        return this.clientSecret.equals(providedSecret); // 临时简化版
-    }
-
-    // 🎯 行为2：明确权限 (检查权限范围)
-    public boolean hasScope(String requestedScope) {
-        if (requestedScope == null || this.scopes == null) {
-            return false;
-        }
-        List<String> availableScopes = Arrays.asList(this.scopes.split(","));
-        return availableScopes.contains(requestedScope.trim());
-    }
-
-    // 📋 行为2扩展：获取所有可用权限
-    public List<String> getAvailableScopes() {
+    // 📋 数据转换：解析权限范围字符串
+    public List<String> getScopesList() {
         if (this.scopes == null || this.scopes.trim().isEmpty()) {
             return Arrays.asList("read"); // 默认只读权限
         }
         return Arrays.asList(this.scopes.split(","))
                 .stream()
                 .map(String::trim)
+                .filter(scope -> !scope.isEmpty())
                 .toList();
     }
 
-    // ⚡ 行为3：表明状态 (检查客户端可用性)
-    public boolean isAvailable() {
-        return this.isActive != null && this.isActive;
+    // 🔍 数据校验：检查数据完整性
+    public boolean isDataValid() {
+        return this.clientId != null && !this.clientId.trim().isEmpty() &&
+               this.clientSecret != null && !this.clientSecret.trim().isEmpty() &&
+               this.clientName != null && !this.clientName.trim().isEmpty() &&
+               this.redirectUri != null && !this.redirectUri.trim().isEmpty();
     }
 
-    // 🛡️ 行为3扩展：获取状态描述
-    public String getStatusDescription() {
-        if (!isAvailable()) {
-            return "DISABLED - Client has been deactivated";
-        }
-        return "ACTIVE - Client is operational";
+    // 📊 数据格式化：生成安全的显示信息
+    public String getDisplayInfo() {
+        return String.format("Client: %s (%s) - Status: %s - Scopes: %s", 
+            this.clientName, 
+            this.clientId,
+            this.isActive ? "Active" : "Inactive",
+            String.join(", ", getScopesList()));
     }
 
-    // 🔍 行为整合：完整验证 (综合三个行为)
-    public boolean isValidForRequest(String providedSecret, String requestedScope) {
-        // 1. 首先检查状态
-        if (!isAvailable()) {
-            return false;
-        }
-        
-        // 2. 验证身份凭据
-        if (!verifyCredentials(providedSecret)) {
-            return false;
-        }
-        
-        // 3. 检查权限范围
-        return hasScope(requestedScope);
+    // 🛡️ 数据转换：生成API安全响应（隐藏敏感信息）
+    public OAuth2Client toSafeResponse() {
+        OAuth2Client safeClient = new OAuth2Client();
+        safeClient.setId(this.id);
+        safeClient.setClientId(this.clientId);
+        safeClient.setClientName(this.clientName);
+        safeClient.setRedirectUri(this.redirectUri);
+        safeClient.setScopes(this.scopes);
+        safeClient.setIsActive(this.isActive);
+        safeClient.setCreatedAt(this.createdAt);
+        safeClient.setUpdatedAt(this.updatedAt);
+        // 💡 注意：不包含clientSecret，保证安全
+        return safeClient;
+    }
+
+    // 📅 数据访问：检查是否为新创建的客户端
+    public boolean isNewlyCreated() {
+        return this.createdAt != null && 
+               this.updatedAt != null && 
+               this.createdAt.equals(this.updatedAt);
+    }
+
+    // 🏷️ 数据格式化：生成客户端标识摘要  
+    public String getClientSummary() {
+        return String.format("%s-%s", 
+            this.clientName != null ? this.clientName.replaceAll("\\s+", "").toLowerCase() : "unknown",
+            this.clientId != null ? this.clientId.substring(0, Math.min(8, this.clientId.length())) : "noId"
+        );
     }
 }

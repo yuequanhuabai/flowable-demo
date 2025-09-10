@@ -37,3 +37,4 @@ CREATE TABLE oauth2_client (
 -- 插入一个测试数据
 INSERT INTO oauth2_client (client_id, client_secret, client_name, redirect_uri, scopes) VALUES 
 ('test_client_001', '$2a$10$example.bcrypt.hash.for.testing.purposes', 'Test Application', 'http://localhost:3000/callback', 'read,write');
+
