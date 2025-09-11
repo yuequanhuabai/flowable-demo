@@ -19,7 +19,7 @@ public class AuthorizationServer {
     // 🔐 安全配置
     private final String issuer = "http://localhost:8080";
     private final String tokenSigningKey = "jwt-signing-secret-key";
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder();
+    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(14);
 
     // ⏱️ 令牌配置 (单位：秒)
     private final int accessTokenExpiration = 3600;      // 1小时
