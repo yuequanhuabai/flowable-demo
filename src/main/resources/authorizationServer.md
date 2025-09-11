@@ -1,7 +1,12 @@
-# OAuth2 AuthorizationServer 字段详细解析
+# OAuth2 验证服务架构 字段详细解析
 
 ## 概述
-`AuthorizationServer` 类是 OAuth2 授权服务器的核心实现，负责管理客户端认证、令牌颁发和授权流程。本文档详细解析每个字段的作用、背景和设计原理。
+本文档详细解析 OAuth2 验证服务架构的设计，包括 `OAuth2ValidationService` 和 `OAuth2AuthorizationService` 的职责分离，以及各字段的作用、背景和设计原理。
+
+## 架构调整说明
+原 `AuthorizationServer` 已按职责分离重构：
+- `OAuth2ValidationService` - 专注验证逻辑
+- `OAuth2AuthorizationService` - 专注授权码管理
 
 ---
 

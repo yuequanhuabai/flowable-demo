@@ -7,14 +7,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.List;
-import java.util.UUID;
 
 /**
- * OAuth2授权服务器
- * 负责验证客户端、管理授权、颁发令牌
+ * OAuth2验证服务
+ * 专注于客户端验证、权限验证、令牌验证等核心验证逻辑
  */
 @Service
-public class AuthorizationServer {
+public class OAuth2ValidationService {
 
     // 🔐 安全配置
     private final String issuer = "http://localhost:8080";
@@ -106,31 +105,9 @@ public class AuthorizationServer {
     // 核心业务方法：令牌管理
     // ================================
 
-    /**
-     * 🎫 生成访问令牌
-     */
-    public String generateAccessToken(OAuth2Client client, String scope) {
-        // 简化版本：实际应该使用JWT
-        return "access_token_" + client.getClientId() + "_" + 
-               UUID.randomUUID().toString().replace("-", "").substring(0, 16) +
-               "_" + System.currentTimeMillis();
-    }
-
-    /**
-     * 🔄 生成刷新令牌  
-     */
-    public String generateRefreshToken(OAuth2Client client) {
-        return "refresh_token_" + client.getClientId() + "_" +
-               UUID.randomUUID().toString().replace("-", "").substring(0, 16);
-    }
-
-    /**
-     * 📝 生成授权码
-     */
-    public String generateAuthorizationCode(OAuth2Client client, String scope) {
-        return "auth_code_" + client.getClientId() + "_" +
-               UUID.randomUUID().toString().replace("-", "").substring(0, 12);
-    }
+    // ================================
+    // 核心业务方法：令牌验证 (生成方法已移至专门的服务)
+    // ================================
 
     /**
      * ⏰ 检查令牌是否过期 (简化版本)
