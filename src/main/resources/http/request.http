@@ -1,0 +1,224 @@
+### OAuth2 客户端注册API测试
+
+### =====================================
+### 1. 成功注册客户端 - 基础测试
+### =====================================
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "测试应用001",
+  "redirectUri": "http://localhost:3000/callback",
+  "scopes": ["read", "write", "user:profile"],
+  "description": "这是一个测试OAuth2客户端应用"
+}
+
+### =====================================
+### 2. 注册另一个客户端 - 不同配置
+### =====================================
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "Demo Web App",
+  "redirectUri": "https://demo.example.com/oauth/callback",
+  "scopes": ["read", "user:email"],
+  "description": "Demo web application for OAuth2 testing"
+}
+
+### =====================================
+### 3. 注册移动应用客户端
+### =====================================
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "Mobile App v1.0",
+  "redirectUri": "https://mobile.app.com/auth/callback",
+  "scopes": ["read", "write", "user:profile", "user:email"],
+  "description": "Mobile application client"
+}
+
+### =====================================
+### 参数验证测试 - 错误场景
+### =====================================
+
+### 4. 缺少必填字段 - clientName
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "redirectUri": "http://localhost:3000/callback",
+  "scopes": ["read", "write"]
+}
+
+### 5. 缺少必填字段 - redirectUri
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "测试应用002",
+  "scopes": ["read", "write"]
+}
+
+### 6. 无效的重定向URI格式
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "测试应用003",
+  "redirectUri": "invalid-uri-format",
+  "scopes": ["read"]
+}
+
+### 7. 客户端名称过短
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "A",
+  "redirectUri": "http://localhost:3000/callback",
+  "scopes": ["read"]
+}
+
+### 8. 客户端名称过长 (超过200字符)
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "这是一个非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常长的客户端名称",
+  "redirectUri": "http://localhost:3000/callback",
+  "scopes": ["read"]
+}
+
+### 9. 重复的客户端名称 (需要先执行步骤1)
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "测试应用001",
+  "redirectUri": "http://localhost:4000/callback",
+  "scopes": ["read"]
+}
+
+### 10. 描述过长 (超过500字符)
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "测试应用长描述",
+  "redirectUri": "http://localhost:3000/callback",
+  "scopes": ["read"],
+  "description": "这是一个非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常非常长的描述"
+}
+
+### =====================================
+### 客户端查询API测试
+### =====================================
+
+### 11. 查询客户端信息 (需要替换为实际的clientId)
+GET http://localhost:8080/oauth2/client/测试应用_a1b2c3d4
+
+### 12. 查询不存在的客户端
+GET http://localhost:8080/oauth2/client/nonexistent_client_id
+
+### 13. 检查客户端状态 (需要替换为实际的clientId)
+GET http://localhost:8080/oauth2/client/测试应用_a1b2c3d4/status
+
+### 14. 检查不存在客户端的状态
+GET http://localhost:8080/oauth2/client/nonexistent_client_id/status
+
+### =====================================
+### 边界值测试
+### =====================================
+
+### 15. 最小有效客户端名称 (2个字符)
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "AB",
+  "redirectUri": "http://localhost:3000/callback",
+  "scopes": ["read"]
+}
+
+### 16. 最大有效客户端名称 (200个字符)
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "这是一个恰好200个字符的客户端名称测试这是一个恰好200个字符的客户端名称测试这是一个恰好200个字符的客户端名称测试这是一个恰好200个字符的客户端名称测试这是一个恰好200个字符的客户端名称测试这是一个恰好200个字符的客户端名称测试这是一个恰好200个字符",
+  "redirectUri": "http://localhost:3000/callback",
+  "scopes": ["read"]
+}
+
+### 17. 最大有效描述 (500个字符)
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "最大描述测试",
+  "redirectUri": "http://localhost:3000/callback",
+  "scopes": ["read"],
+  "description": "这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试这是一个恰好500个字符的描述测试"
+}
+
+### =====================================
+### 特殊字符测试
+### =====================================
+
+### 18. 包含特殊字符的客户端名称
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "Test App (v2.0) & More!",
+  "redirectUri": "http://localhost:3000/callback",
+  "scopes": ["read", "write"]
+}
+
+### 19. HTTPS重定向URI
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "HTTPS Test App",
+  "redirectUri": "https://secure.example.com:8443/oauth/callback",
+  "scopes": ["read", "write", "admin"]
+}
+
+### 20. 不同权限范围组合测试
+POST http://localhost:8080/oauth2/client/register
+Content-Type: application/json
+
+{
+  "clientName": "Full Permission App",
+  "redirectUri": "http://localhost:3000/callback",
+  "scopes": ["read", "write", "user:profile", "user:email", "admin"]
+}
+
+### =====================================
+### 批量测试脚本说明
+### =====================================
+###
+### 测试步骤：
+### 1. 确保Spring Boot应用已启动 (http://localhost:8080)
+### 2. 按顺序执行请求1-3 (成功场景)
+### 3. 保存返回的clientId用于后续查询测试
+### 4. 执行请求4-10 (验证错误处理)
+### 5. 使用实际的clientId执行请求11,13 (查询测试)
+### 6. 执行请求12,14 (查询不存在客户端)
+### 7. 执行其余边界值和特殊字符测试
+###
+### 预期结果：
+### - 成功请求: HTTP 201, 返回完整客户端信息含clientSecret
+### - 验证失败: HTTP 400, 返回validation_error
+### - 业务失败: HTTP 400, 返回具体错误信息
+### - 查询成功: HTTP 200, 返回客户端信息(不含secret)
+### - 查询失败: HTTP 404, 返回client_not_found
+###
+### 注意事项：
+### - clientSecret只在注册时返回一次，请立即保存！
+### - 查询测试需要使用真实的clientId
+### - 重复名称测试需要先注册成功一个客户端
+###
