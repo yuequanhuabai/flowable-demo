@@ -1,5 +1,6 @@
 package com.example.flowabledemo.entity;
 
+import com.baomidou.mybatisplus.annotation.TableName;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -11,6 +12,7 @@ import java.util.Objects;
  * OAuth2客户端实体类
  * 基于四个核心安全机制设计：身份标识、身份验证、权限控制、可撤销机制
  */
+@TableName("oauth2_client")
 @Data
 public class OAuth2Client {
 
@@ -166,18 +168,18 @@ public class OAuth2Client {
     // 🔍 数据校验：检查数据完整性
     public boolean isDataValid() {
         return this.clientId != null && !this.clientId.trim().isEmpty() &&
-               this.clientSecret != null && !this.clientSecret.trim().isEmpty() &&
-               this.clientName != null && !this.clientName.trim().isEmpty() &&
-               this.redirectUri != null && !this.redirectUri.trim().isEmpty();
+                this.clientSecret != null && !this.clientSecret.trim().isEmpty() &&
+                this.clientName != null && !this.clientName.trim().isEmpty() &&
+                this.redirectUri != null && !this.redirectUri.trim().isEmpty();
     }
 
     // 📊 数据格式化：生成安全的显示信息
     public String getDisplayInfo() {
-        return String.format("Client: %s (%s) - Status: %s - Scopes: %s", 
-            this.clientName, 
-            this.clientId,
-            this.isActive ? "Active" : "Inactive",
-            String.join(", ", getScopesList()));
+        return String.format("Client: %s (%s) - Status: %s - Scopes: %s",
+                this.clientName,
+                this.clientId,
+                this.isActive ? "Active" : "Inactive",
+                String.join(", ", getScopesList()));
     }
 
     // 🛡️ 数据转换：生成API安全响应（隐藏敏感信息）
@@ -197,16 +199,16 @@ public class OAuth2Client {
 
     // 📅 数据访问：检查是否为新创建的客户端
     public boolean isNewlyCreated() {
-        return this.createdAt != null && 
-               this.updatedAt != null && 
-               this.createdAt.equals(this.updatedAt);
+        return this.createdAt != null &&
+                this.updatedAt != null &&
+                this.createdAt.equals(this.updatedAt);
     }
 
     // 🏷️ 数据格式化：生成客户端标识摘要  
     public String getClientSummary() {
-        return String.format("%s-%s", 
-            this.clientName != null ? this.clientName.replaceAll("\\s+", "").toLowerCase() : "unknown",
-            this.clientId != null ? this.clientId.substring(0, Math.min(8, this.clientId.length())) : "noId"
+        return String.format("%s-%s",
+                this.clientName != null ? this.clientName.replaceAll("\\s+", "").toLowerCase() : "unknown",
+                this.clientId != null ? this.clientId.substring(0, Math.min(8, this.clientId.length())) : "noId"
         );
     }
 }

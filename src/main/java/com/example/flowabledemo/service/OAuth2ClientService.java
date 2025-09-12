@@ -18,6 +18,7 @@ import java.util.UUID;
 public class OAuth2ClientService {
 
     private final OAuth2ClientMapper clientMapper;
+    private final ScopeValidationService scopeValidationService;
     private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(14);
 
     // ================================
@@ -66,7 +67,12 @@ public class OAuth2ClientService {
             result.setClientName(request.getClientName());
             result.setRedirectUri(request.getRedirectUri());
             result.setScopes(request.getScopes());
-            result.setMessage("Client registered successfully");
+            
+            String message = "Client registered successfully";
+            if (validation.getWarning() != null) {
+                message += ". Warning: " + validation.getWarning();
+            }
+            result.setMessage(message);
 
             return result;
 
@@ -130,11 +136,25 @@ public class OAuth2ClientService {
             return result;
         }
 
-        // 检查权限范围
-        if (request.getScopes() == null || request.getScopes().isEmpty()) {
-            // 设置默认权限
-            request.getScopes().add("read");
+        // 验证和过滤权限范围
+        ScopeValidationService.ScopeValidationResult scopeResult = 
+            scopeValidationService.validateScopes(request.getScopes(), "confidential"); // 简化版，实际应该从请求中获取客户端类型
+        
+        if (!scopeResult.isValid()) {
+            result.setValid(false);
+            result.setErrorMessage("Invalid scopes: " + scopeResult.getMessage());
+            return result;
         }
+        
+        // 如果有被拒绝的权限，给出警告信息但仍然允许注册
+        if (scopeResult.hasRejectedScopes()) {
+            // 注意：这里可以选择拒绝注册或者给出警告
+            // 当前实现：允许注册但记录被拒绝的权限
+            result.setWarning("Some requested scopes were rejected: " + scopeResult.getRejectedScopes());
+        }
+        
+        // 更新请求中的权限为已批准的权限
+        request.setScopes(scopeResult.getApprovedScopes());
 
         result.setValid(true);
         return result;
@@ -144,7 +164,8 @@ public class OAuth2ClientService {
      * 生成客户端ID
      */
     private String generateClientId(String clientName) {
-        String prefix = clientName.toLowerCase().replaceAll("[^a-z0-9]", "").substring(0, Math.min(8, clientName.length()));
+        int length = clientName.toLowerCase().replaceAll("[^a-z0-9]", "").length();
+        String prefix = clientName.toLowerCase().replaceAll("[^a-z0-9]", "").substring(0, Math.min(8, length));
         String uuid = UUID.randomUUID().toString().replace("-", "").substring(0, 8);
         String clientId = prefix + "_" + uuid;
 
@@ -252,11 +273,15 @@ public class OAuth2ClientService {
     private static class ValidationResult {
         private boolean valid;
         private String errorMessage;
+        private String warning;
 
         public boolean isValid() { return valid; }
         public void setValid(boolean valid) { this.valid = valid; }
 
         public String getErrorMessage() { return errorMessage; }
         public void setErrorMessage(String errorMessage) { this.errorMessage = errorMessage; }
+        
+        public String getWarning() { return warning; }
+        public void setWarning(String warning) { this.warning = warning; }
     }
 }
