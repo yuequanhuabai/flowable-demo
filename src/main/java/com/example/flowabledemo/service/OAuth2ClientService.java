@@ -3,7 +3,7 @@ package com.example.flowabledemo.service;
 import com.example.flowabledemo.entity.OAuth2Client;
 import com.example.flowabledemo.mapper.OAuth2ClientMapper;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -19,7 +19,7 @@ public class OAuth2ClientService {
 
     private final OAuth2ClientMapper clientMapper;
     private final ScopeValidationService scopeValidationService;
-    private final BCryptPasswordEncoder passwordEncoder = new BCryptPasswordEncoder(14);
+    private final PasswordEncoder passwordEncoder;
 
     // ================================
     // 客户端注册相关方法
