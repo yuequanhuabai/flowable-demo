@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth2 流程测试</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .test-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .test-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .test-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .test-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 12px;
+        }
+
+        .test-subtitle {
+            color: #718096;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .test-section {
+            background: #f7fafc;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .section-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .test-info {
+            background: #edf2f7;
+            border-left: 4px solid #667eea;
+            padding: 16px;
+            margin-bottom: 20px;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .test-info h4 {
+            color: #2d3748;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .test-info p {
+            color: #4a5568;
+            font-size: 13px;
+            margin: 4px 0;
+        }
+
+        .test-info code {
+            background: #cbd5e0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+        }
+
+        .oauth2-button {
+            width: 100%;
+            padding: 16px 24px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            margin-bottom: 16px;
+        }
+
+        .oauth2-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .flow-steps {
+            list-style: none;
+            padding: 0;
+        }
+
+        .flow-step {
+            display: flex;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .flow-step:last-child {
+            border-bottom: none;
+        }
+
+        .step-number {
+            width: 28px;
+            height: 28px;
+            background: #667eea;
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 14px;
+            margin-right: 12px;
+        }
+
+        .step-text {
+            flex: 1;
+            color: #4a5568;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1 class="test-title">OAuth2 授权流程测试</h1>
+            <p class="test-subtitle">测试 OAuth2 Authorization Code Flow 完整流程</p>
+        </div>
+
+        <!-- 测试信息 -->
+        <div class="test-info">
+            <h4>🔧 测试客户端信息</h4>
+            <p>客户端ID: <code>testapp_71fbea54</code></p>
+            <p>客户端名称: <code>Test App</code></p>
+            <p>重定向URI: <code>http://localhost:3000/callback</code></p>
+            <p>请求权限: <code>read, write, openid, profile</code></p>
+        </div>
+
+        <!-- OAuth2流程说明 -->
+        <div class="test-section">
+            <h3 class="section-title">🔐 OAuth2 授权码流程步骤</h3>
+            <ul class="flow-steps">
+                <li class="flow-step">
+                    <div class="step-number">1</div>
+                    <div class="step-text">用户点击授权按钮，跳转到授权服务器</div>
+                </li>
+                <li class="flow-step">
+                    <div class="step-number">2</div>
+                    <div class="step-text">如果未登录，会先跳转到登录页面</div>
+                </li>
+                <li class="flow-step">
+                    <div class="step-number">3</div>
+                    <div class="step-text">登录成功后，显示授权确认页面</div>
+                </li>
+                <li class="flow-step">
+                    <div class="step-number">4</div>
+                    <div class="step-text">用户确认授权后，获得授权码</div>
+                </li>
+                <li class="flow-step">
+                    <div class="step-number">5</div>
+                    <div class="step-text">应用使用授权码交换访问令牌</div>
+                </li>
+            </ul>
+        </div>
+
+        <!-- 开始测试按钮 -->
+        <a href="javascript:void(0)" onclick="startOAuth2Flow()" class="oauth2-button">
+            🚀 开始 OAuth2 授权流程测试
+        </a>
+
+        <!-- 当前用户信息 -->
+        <div class="test-info">
+            <h4>👤 当前用户</h4>
+            <p>已登录用户: <span th:text="${#authentication.name}">匿名用户</span></p>
+            <p>认证状态: <span th:text="${#authentication.authenticated} ? '已认证' : '未认证'">未知</span></p>
+        </div>
+    </div>
+
+    <script>
+        function startOAuth2Flow() {
+            // OAuth2 授权码流程参数
+            const authParams = new URLSearchParams({
+                response_type: 'code',
+                client_id: 'testapp_71fbea54',
+                redirect_uri: 'http://localhost:3000/callback',
+                scope: 'read write openid profile',
+                state: generateState()
+            });
+
+            // 构造授权URL并跳转
+            const authUrl = `${window.location.origin}/oauth2/authorize?${authParams}`;
+            console.log('跳转到授权端点:', authUrl);
+            window.location.href = authUrl;
+        }
+
+        function generateState() {
+            // 生成随机state参数防止CSRF攻击
+            return Math.random().toString(36).substring(2, 15) +
+                   Math.random().toString(36).substring(2, 15);
+        }
+
+        // 页面加载完成后的提示
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('OAuth2 测试页面加载完成');
+            console.log('点击按钮开始测试OAuth2授权流程');
+        });
+    </script>
+</body>
+</html>

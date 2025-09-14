@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OAuth2 演示 - 用户注册</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .register-container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 450px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .register-container::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .register-header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .register-title {
+            font-size: 28px;
+            font-weight: 700;
+            color: #2d3748;
+            margin-bottom: 8px;
+        }
+
+        .register-subtitle {
+            color: #718096;
+            font-size: 16px;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+            position: relative;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 16px 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 12px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #667eea;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .register-button {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .register-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .register-button:active {
+            transform: translateY(0);
+        }
+
+        /* 消息样式 */
+        .alert {
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            font-weight: 500;
+        }
+
+        .alert-error {
+            background-color: #fed7d7;
+            border: 1px solid #feb2b2;
+            color: #c53030;
+        }
+
+        .alert-success {
+            background-color: #c6f6d5;
+            border: 1px solid #9ae6b4;
+            color: #2f855a;
+        }
+
+        /* 密码强度指示器 */
+        .password-strength {
+            margin-top: 8px;
+            height: 4px;
+            border-radius: 2px;
+            background: #e2e8f0;
+            overflow: hidden;
+            display: none;
+        }
+
+        .password-strength.show {
+            display: block;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0%;
+            transition: all 0.3s ease;
+            border-radius: 2px;
+        }
+
+        .strength-weak { background: #fc8181; width: 33%; }
+        .strength-medium { background: #f6e05e; width: 66%; }
+        .strength-strong { background: #68d391; width: 100%; }
+
+        .password-hint {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #718096;
+        }
+
+        /* 导航链接 */
+        .auth-nav {
+            text-align: center;
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid #e2e8f0;
+        }
+
+        .auth-nav a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .auth-nav a:hover {
+            text-decoration: underline;
+        }
+
+        /* 注册规则 */
+        .registration-rules {
+            background: #f7fafc;
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 24px;
+        }
+
+        .registration-rules h4 {
+            color: #4a5568;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .registration-rules ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .registration-rules li {
+            color: #718096;
+            font-size: 12px;
+            margin: 4px 0;
+            padding-left: 16px;
+            position: relative;
+        }
+
+        .registration-rules li::before {
+            content: '•';
+            color: #667eea;
+            font-weight: bold;
+            position: absolute;
+            left: 0;
+        }
+
+        /* 响应式设计 */
+        @media (max-width: 480px) {
+            .register-container {
+                margin: 20px;
+                padding: 30px 20px;
+            }
+
+            .register-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="register-container">
+        <div class="register-header">
+            <h1 class="register-title">创建账户</h1>
+            <p class="register-subtitle">注册成为OAuth2演示系统用户</p>
+        </div>
+
+        <!-- 错误消息 -->
+        <div th:if="${errorMessage}" class="alert alert-error">
+            <span th:text="${errorMessage}"></span>
+        </div>
+
+        <!-- 成功消息 -->
+        <div th:if="${successMessage}" class="alert alert-success">
+            <span th:text="${successMessage}"></span>
+        </div>
+
+        <!-- 注册表单 -->
+        <form th:action="@{/register}" method="post" id="registerForm">
+            <div class="form-group">
+                <label for="username" class="form-label">用户名 *</label>
+                <input type="text"
+                       id="username"
+                       name="username"
+                       class="form-input"
+                       placeholder="请输入用户名（3-20字符）"
+                       th:value="${username}"
+                       required
+                       autofocus
+                       maxlength="20"
+                       pattern="^[a-zA-Z0-9_]+$">
+            </div>
+
+            <div class="form-group">
+                <label for="password" class="form-label">密码 *</label>
+                <input type="password"
+                       id="password"
+                       name="password"
+                       class="form-input"
+                       placeholder="请输入密码（至少6位）"
+                       required
+                       minlength="6"
+                       maxlength="50">
+                <div class="password-strength" id="passwordStrength">
+                    <div class="password-strength-bar" id="passwordStrengthBar"></div>
+                </div>
+                <div class="password-hint" id="passwordHint"></div>
+            </div>
+
+            <div class="form-group">
+                <label for="confirmPassword" class="form-label">确认密码 *</label>
+                <input type="password"
+                       id="confirmPassword"
+                       name="confirmPassword"
+                       class="form-input"
+                       placeholder="请再次输入密码"
+                       required
+                       minlength="6"
+                       maxlength="50">
+            </div>
+
+            <button type="submit" class="register-button" id="registerButton">立即注册</button>
+        </form>
+
+        <!-- 注册规则 -->
+        <div class="registration-rules">
+            <h4>📋 注册要求</h4>
+            <ul>
+                <li>用户名：3-20字符，只能包含字母、数字和下划线</li>
+                <li>密码：6-50字符，建议包含字母和数字</li>
+                <li>确认密码：必须与密码一致</li>
+            </ul>
+        </div>
+
+        <!-- 导航链接 -->
+        <div class="auth-nav">
+            <p>已有账户？<a href="/login">立即登录</a></p>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.getElementById('registerForm');
+            const usernameInput = document.getElementById('username');
+            const passwordInput = document.getElementById('password');
+            const confirmPasswordInput = document.getElementById('confirmPassword');
+            const passwordStrength = document.getElementById('passwordStrength');
+            const passwordStrengthBar = document.getElementById('passwordStrengthBar');
+            const passwordHint = document.getElementById('passwordHint');
+            const registerButton = document.getElementById('registerButton');
+
+            // 用户名验证
+            usernameInput.addEventListener('input', function() {
+                const value = this.value;
+                const isValid = /^[a-zA-Z0-9_]{3,20}$/.test(value);
+
+                if (value.length === 0) {
+                    this.style.borderColor = '#e2e8f0';
+                } else if (isValid) {
+                    this.style.borderColor = '#68d391';
+                } else {
+                    this.style.borderColor = '#fc8181';
+                }
+            });
+
+            // 密码强度检测
+            passwordInput.addEventListener('input', function() {
+                const password = this.value;
+
+                if (password.length === 0) {
+                    passwordStrength.classList.remove('show');
+                    passwordHint.textContent = '';
+                    return;
+                }
+
+                passwordStrength.classList.add('show');
+
+                let strength = 0;
+                let hints = [];
+
+                // 长度检查
+                if (password.length >= 6) strength++;
+                else hints.push('至少6位');
+
+                // 字母检查
+                if (/[a-zA-Z]/.test(password)) strength++;
+                else hints.push('包含字母');
+
+                // 数字检查
+                if (/\d/.test(password)) strength++;
+                else hints.push('包含数字');
+
+                // 特殊字符检查
+                if (/[!@#$%^&*(),.?":{}|<>]/.test(password)) strength++;
+
+                // 更新强度指示器
+                passwordStrengthBar.className = 'password-strength-bar';
+                if (strength <= 1) {
+                    passwordStrengthBar.classList.add('strength-weak');
+                    passwordHint.textContent = '密码强度：弱 - ' + hints.join('、');
+                    passwordHint.style.color = '#e53e3e';
+                } else if (strength <= 2) {
+                    passwordStrengthBar.classList.add('strength-medium');
+                    passwordHint.textContent = '密码强度：中等';
+                    passwordHint.style.color = '#d69e2e';
+                } else {
+                    passwordStrengthBar.classList.add('strength-strong');
+                    passwordHint.textContent = '密码强度：强';
+                    passwordHint.style.color = '#38a169';
+                }
+            });
+
+            // 确认密码验证
+            function validatePasswordMatch() {
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+
+                if (confirmPassword.length === 0) {
+                    confirmPasswordInput.style.borderColor = '#e2e8f0';
+                } else if (password === confirmPassword) {
+                    confirmPasswordInput.style.borderColor = '#68d391';
+                } else {
+                    confirmPasswordInput.style.borderColor = '#fc8181';
+                }
+            }
+
+            passwordInput.addEventListener('input', validatePasswordMatch);
+            confirmPasswordInput.addEventListener('input', validatePasswordMatch);
+
+            // 表单提交验证
+            form.addEventListener('submit', function(e) {
+                const username = usernameInput.value;
+                const password = passwordInput.value;
+                const confirmPassword = confirmPasswordInput.value;
+
+                // 验证用户名
+                if (!/^[a-zA-Z0-9_]{3,20}$/.test(username)) {
+                    e.preventDefault();
+                    alert('用户名格式不正确');
+                    usernameInput.focus();
+                    return;
+                }
+
+                // 验证密码长度
+                if (password.length < 6) {
+                    e.preventDefault();
+                    alert('密码至少需要6位');
+                    passwordInput.focus();
+                    return;
+                }
+
+                // 验证密码一致性
+                if (password !== confirmPassword) {
+                    e.preventDefault();
+                    alert('两次输入的密码不一致');
+                    confirmPasswordInput.focus();
+                    return;
+                }
+
+                // 防止重复提交
+                registerButton.disabled = true;
+                registerButton.textContent = '注册中...';
+            });
+        });
+    </script>
+</body>
+</html>
