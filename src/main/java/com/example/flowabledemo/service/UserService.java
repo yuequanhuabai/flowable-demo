@@ -136,6 +136,102 @@ public class UserService {
     }
 
     // ================================
+    // 用户注册方法
+    // ================================
+
+    /**
+     * 注册新用户
+     */
+    public boolean registerUser(String username, String password) {
+        if (username == null || password == null ||
+            username.trim().isEmpty() || password.trim().isEmpty()) {
+            log.debug("Username or password is null/empty for registration");
+            return false;
+        }
+
+        try {
+            // 1. 检查用户名是否已存在
+            if (existsByUsername(username)) {
+                log.debug("Username already exists: {}", username);
+                return false;
+            }
+
+            // 2. 验证用户名格式（简单验证）
+            if (username.length() < 3 || username.length() > 20) {
+                log.debug("Invalid username length: {}", username);
+                return false;
+            }
+
+            // 3. 验证密码强度（简单验证）
+            if (password.length() < 6) {
+                log.debug("Password too short");
+                return false;
+            }
+
+            // 4. 创建新用户
+            User newUser = new User();
+            newUser.setUsername(username.trim());
+            newUser.setPassword(passwordEncoder.encode(password));
+            newUser.setEnabled(true);
+            newUser.setCreatedAt(java.time.LocalDateTime.now());
+            newUser.setUpdatedAt(java.time.LocalDateTime.now());
+
+            // 5. 保存到数据库
+            int result = userMapper.insert(newUser);
+
+            if (result > 0) {
+                log.info("Successfully registered new user: {}", username);
+                return true;
+            } else {
+                log.error("Failed to insert new user: {}", username);
+                return false;
+            }
+
+        } catch (Exception e) {
+            log.error("Error registering user: {}", username, e);
+            return false;
+        }
+    }
+
+    /**
+     * 验证注册信息
+     */
+    public String validateRegistrationData(String username, String password, String confirmPassword) {
+        // 验证用户名
+        if (username == null || username.trim().isEmpty()) {
+            return "用户名不能为空";
+        }
+
+        if (username.length() < 3 || username.length() > 20) {
+            return "用户名长度必须在3-20字符之间";
+        }
+
+        if (!username.matches("^[a-zA-Z0-9_]+$")) {
+            return "用户名只能包含字母、数字和下划线";
+        }
+
+        if (existsByUsername(username)) {
+            return "用户名已存在";
+        }
+
+        // 验证密码
+        if (password == null || password.isEmpty()) {
+            return "密码不能为空";
+        }
+
+        if (password.length() < 6 || password.length() > 50) {
+            return "密码长度必须在6-50字符之间";
+        }
+
+        // 验证确认密码
+        if (!password.equals(confirmPassword)) {
+            return "两次输入的密码不一致";
+        }
+
+        return null; // 无错误
+    }
+
+    // ================================
     // 系统统计方法
     // ================================
 

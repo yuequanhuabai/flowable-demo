@@ -37,6 +37,9 @@ public class SecurityConfig {
         http
             // 配置OAuth2授权服务器
             .getConfigurer(OAuth2AuthorizationServerConfigurer.class)
+            .authorizationEndpoint(authorizationEndpoint ->
+                authorizationEndpoint.consentPage("/oauth2/consent") // 自定义授权确认页面
+            )
             .oidc(Customizer.withDefaults()); // 启用OIDC 1.0支持
 
         http
@@ -69,19 +72,26 @@ public class SecurityConfig {
 
                 // 测试端点放行（开发阶段）
                 .requestMatchers("/test/**").permitAll()
+                .requestMatchers("/oauth2-test").permitAll()
 
                 // 静态资源和公共端点放行
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/error").permitAll()
 
+                // 注册相关端点放行
+                .requestMatchers("/register").permitAll()
+
                 // 其他所有请求需要认证
                 .anyRequest().authenticated()
             )
 
-            // 使用Spring Security默认表单登录
+            // 使用自定义表单登录页面
             .formLogin(form -> form
+                .loginPage("/login")
+                .loginProcessingUrl("/login")
                 .defaultSuccessUrl("/", true)
+                .failureUrl("/login?error=true")
                 .permitAll()
             )
 

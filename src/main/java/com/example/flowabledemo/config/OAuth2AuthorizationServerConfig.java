@@ -20,6 +20,15 @@ import org.springframework.security.oauth2.server.authorization.config.annotatio
 import org.springframework.security.oauth2.server.authorization.settings.AuthorizationServerSettings;
 import org.springframework.security.oauth2.server.authorization.settings.ClientSettings;
 import org.springframework.security.oauth2.server.authorization.settings.TokenSettings;
+import org.springframework.security.oauth2.server.authorization.OAuth2Authorization;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsent;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.OAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.InMemoryOAuth2AuthorizationConsentService;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationService;
+import org.springframework.security.oauth2.server.authorization.JdbcOAuth2AuthorizationConsentService;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
@@ -38,6 +47,7 @@ import java.util.UUID;
 public class OAuth2AuthorizationServerConfig {
 
     private final OAuth2ClientService oauth2ClientService;
+    private final JdbcTemplate jdbcTemplate;
 
     /**
      * 注册客户端仓库
@@ -166,5 +176,33 @@ public class OAuth2AuthorizationServerConfig {
                 .oidcUserInfoEndpoint("/oauth2/userinfo") // OIDC用户信息端点
                 .oidcLogoutEndpoint("/connect/logout") // OIDC登出端点
                 .build();
+    }
+
+    /**
+     * OAuth2 授权服务
+     * 管理OAuth2授权信息的存储和检索
+     *
+     * 使用数据库存储确保：
+     * - 授权码、访问令牌等信息持久化
+     * - 支持应用重启后的状态恢复和多实例部署
+     * - 生产环境就绪
+     */
+    @Bean
+    public OAuth2AuthorizationService authorizationService(RegisteredClientRepository clientRepository) {
+        return new JdbcOAuth2AuthorizationService(jdbcTemplate, clientRepository);
+    }
+
+    /**
+     * OAuth2 授权同意服务
+     * 管理用户授权同意信息的存储和检索
+     *
+     * 使用数据库存储确保：
+     * - 用户的授权同意记录永久保存
+     * - 用户不需要重复授权，提升用户体验
+     * - 支持多实例部署的数据一致性
+     */
+    @Bean
+    public OAuth2AuthorizationConsentService authorizationConsentService(RegisteredClientRepository clientRepository) {
+        return new JdbcOAuth2AuthorizationConsentService(jdbcTemplate, clientRepository);
     }
 }

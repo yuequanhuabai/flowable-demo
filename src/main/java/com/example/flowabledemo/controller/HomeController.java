@@ -18,40 +18,15 @@ public class HomeController {
      * 首页 - 显示当前登录用户信息
      */
     @GetMapping("/")
-    @ResponseBody
-    public String home() {
+    public String home(Model model) {
         Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-        
-        if (auth != null && auth.isAuthenticated() && !auth.getName().equals("anonymousUser")) {
-            return String.format("""
-                <h1>OAuth2 演示项目</h1>
-                <h2>欢迎, %s!</h2>
-                <p>您已成功登录系统。</p>
-                
-                <h3>可用功能:</h3>
-                <ul>
-                    <li><a href="/oauth2/client/test_client_001">查看测试客户端信息</a></li>
-                    <li><a href="/logout">退出登录</a></li>
-                </ul>
-                
-                <h3>用户信息:</h3>
-                <ul>
-                    <li>用户名: %s</li>
-                    <li>权限: %s</li>
-                    <li>认证状态: %s</li>
-                </ul>
-                
-                <hr>
-                <p><small>这是一个OAuth2客户端注册和授权演示项目</small></p>
-                """, 
-                auth.getName(), 
-                auth.getName(),
-                auth.getAuthorities(),
-                auth.isAuthenticated() ? "已认证" : "未认证"
-            );
-        } else {
-            return "<h1>OAuth2 演示项目</h1><p>请先<a href='/login'>登录</a></p>";
+
+        if (auth != null && auth.isAuthenticated() &&
+            !auth.getPrincipal().equals("anonymousUser")) {
+            model.addAttribute("username", auth.getName());
         }
+
+        return "home";
     }
 
     /**
