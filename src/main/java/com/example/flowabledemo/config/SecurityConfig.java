@@ -89,7 +89,10 @@ public class SecurityConfig {
             .logout(logout -> logout.permitAll())
 
             // 配置用户详情服务
-            .userDetailsService(userDetailsService);
+            .userDetailsService(userDetailsService)
+
+            // 暂时禁用CSRF（开发阶段）
+            .csrf(csrf -> csrf.disable());
 
         return http.build();
     }
