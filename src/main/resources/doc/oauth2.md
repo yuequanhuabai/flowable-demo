@@ -30,7 +30,7 @@ participant Resource as ??資源服務器
 
       Note over User,Resource: 1. 服務發現階段
       Client->>AuthServer: GET /.well-known/oauth-authorization-server
-      AuthServer-->>Client: 返回所有端點配置信息
+      AuthServer-->>Client: 返回所有端點配置信息   
 
       Note over User,Resource: 2. 授權階段
       User->>Client: 點擊"微信登錄"
